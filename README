@@ -1,0 +1,7 @@
+A very simple way to handle user authentication in Sinatra.
+
+Use with "require 'loginHandler'"
+
+The path to the users DB is hard-coded to 'users.db'. Schema is given by 'initLoginHandler.sql' file.
+
+Use given helpers (require_auth, require_non_auth, is_authed?) to check for authentication, and session[:user] to access the current username.
