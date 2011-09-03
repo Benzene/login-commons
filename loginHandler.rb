@@ -87,6 +87,8 @@ __END__
   %input{:type => "password", :name => "pass"}
   %br
   %input{:type => "submit"}
+  :markdown
+    No account ? Try to [register](/register "Register") first !
 
 @@ register
 %form{:action => url('/register'), :method => "post"}
