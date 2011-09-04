@@ -76,6 +76,11 @@ post '/register' do
 	redirect url('/')
 end
 
+get '/logout' do
+	session[:user] = nil
+	redirect url('/')
+end
+
 __END__
 
 @@ login
