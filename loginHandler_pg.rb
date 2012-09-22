@@ -1,7 +1,14 @@
+#!/usr/bin/env ruby
+
 require 'sinatra'
-require 'sqlite3'
+require 'pg'
 require 'bcrypt'
+require 'haml'
 require 'rack/csrf'
+
+dbname = "common_users"
+dbuser = "common_users"
+dbpass = "common_users"
 
 enable :inline_templates
 
@@ -27,9 +34,9 @@ helpers do
 	def auth(user, pass)
 		raise AuthenticationError, 'No credentials given' unless (user.is_a?(String) && pass.is_a?(String))
 		pair = [ user ]
-		res = @auth_db.execute("SELECT hashed_pass FROM users WHERE username=?", pair)
-		raise AuthenticationError, 'Invalid credentials (username not found)' unless res.length > 0
-		raise AuthenticationError, 'Invalid credentials (wrong password)' unless BCrypt::Password.new(res[0][0]) == pass
+		res = @auth_db.exec('SELECT hashed_pass FROM users WHERE "username"=$1', pair)
+		raise AuthenticationError, 'Invalid credentials (username not found)' unless res.ntuples > 0
+		raise AuthenticationError, 'Invalid credentials (wrong password)' unless BCrypt::Password.new(res[0]['hashed_pass']) == pass
 		session[:user] = user
 	end
 	def require_auth
@@ -45,7 +52,7 @@ helpers do
 end
 
 before do
-	@auth_db = SQLite3::Database.new "users.db"
+    @auth_db = PGconn.open(:dbname => dbname, :user => dbuser, :password => dbpass)
 end
 
 # An usage example :
@@ -74,7 +81,13 @@ end
 post '/register' do
 	require_non_auth
 	pair = [ params[:user], BCrypt::Password.create(params[:pass]), params[:email] ]
-	@auth_db.execute("INSERT INTO users (username,hashed_pass,email) VALUES(?,?,?)", pair)
+    begin
+	    @auth_db.exec('INSERT INTO users (username,hashed_pass,email) VALUES($1,$2,$3)', pair)
+    rescue PG::Error => e
+        puts e.message
+        puts e.backtrace.inspect
+        redirect url('/register')
+    end
 	redirect url('/')
 end
 
